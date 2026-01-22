@@ -19,11 +19,12 @@ class Server
 {
 	private:
 		int _serverFd;
+		int _port;
 		std::string _password;
 		std::vector<struct pollfd> _pollfds;
 		std::map<int, Client*> _clients;
 
-		void setupSocket(int port);
+		void setupSocket();
 		void acceptClient();
 		void receiveData(int clientFd);
 		void sendData(int clientFd);

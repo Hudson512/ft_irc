@@ -7,11 +7,9 @@ void Server::handler(int signal)
 }
 
 Server::Server(int port, const std::string& password)
-	: _serverFd(-1), _password(password)
+	: _serverFd(-1), _port(port), _password(password)
 {
-	if(port > 65535 || port < 1024)
-		throw std::invalid_argument("<port> must be between 1024 and 65535");
-	setupSocket(port);
+	setupSocket();
 	struct pollfd pfd;
 	pfd.fd = _serverFd;
 	pfd.events = POLLIN;
@@ -20,8 +18,10 @@ Server::Server(int port, const std::string& password)
 	_pollfds.push_back(pfd);
 }
 
-void Server::setupSocket(int port)
+void Server::setupSocket()
 {
+	if(this->_port > 65535 || this->_port < 1024)
+		throw std::invalid_argument("<port> must be between 1024 and 65535");
 	_serverFd = socket(AF_INET, SOCK_STREAM, 0);
 	if (_serverFd < 0)
 		throw std::runtime_error("socket() failed");
@@ -32,7 +32,7 @@ void Server::setupSocket(int port)
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(port);
+	addr.sin_port = htons(this->_port);
 
 	if (bind(_serverFd, (sockaddr*)&addr, sizeof(addr)) < 0)
 		throw std::runtime_error("bind() failed");
@@ -49,12 +49,14 @@ void Server::run()
 	signal(SIGINT, handler); //^C
 	signal(SIGQUIT, handler); // "^\" ou ^|
 	signal(SIGTSTP, handler); // ^Z
+	std::cout << "Server running in localhost port " << this->_port << std::endl;
 	while (true)
 	{
 		if(poll(&_pollfds[0], _pollfds.size(), -1) == -1)
 			break;
 		for (size_t i = 0; i < _pollfds.size(); ++i)
 		{
+			//std::cout <<" Client: " << _pollfds[i].fd << " reventes: " << _pollfds[i].revents << " And events: " << _pollfds[i].events << std::endl;
 			if (_pollfds[i].revents & POLLIN)
 			{
 				if (_pollfds[i].fd == _serverFd)
@@ -112,6 +114,8 @@ void Server::sendData(int clientFd)
 		client->sendBuffer.c_str(),
 		client->sendBuffer.size(),
 		0);
+	/*if (bytes < 0)
+     return;*/
 
 	if (bytes <= 0)
 	{
