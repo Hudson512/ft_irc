@@ -55,6 +55,7 @@ class Server
         std::string _setUserName(commandRequest& request, int fd);
         std::string attemptRegistration(int fd);
 		std::string _joinChannel(commandRequest& request, int fd);
+		std::string _privmsg(commandRequest& request, int sender_fd);
 
 	public:
 		Server(int port, const std::string& password);
