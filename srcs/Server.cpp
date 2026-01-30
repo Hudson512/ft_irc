@@ -57,26 +57,27 @@ void Server::setupSocket(void)
 
 void Server::run(void)
 {
-	signal(SIGINT, handler);
-	signal(SIGQUIT, handler); 
-	std::cout << "Server running in localhost port " << this->_port << std::endl;
-	while (true)
-	{
-		if(poll(&_pollfds[0], _pollfds.size(), -1) == -1)
-			break;
-		for (size_t i = 0; i < _pollfds.size(); ++i)
-		{
-			if (_pollfds[i].revents & POLLIN)
-			{
-				if (_pollfds[i].fd == _serverFd)
-					acceptClient();
-				else
-					receiveData(i);
-			}
-			if (_pollfds[i].revents & POLLOUT)
-				sendData(i);
-		}
-	}
+    signal(SIGINT, handler);
+    signal(SIGQUIT, handler); 
+    std::cout << "Server running in localhost port " << this->_port << std::endl;
+    while (true)
+    {
+        if(poll(&_pollfds[0], _pollfds.size(), -1) == -1)
+            break;
+        for (int i = _pollfds.size() - 1; i >= 0; --i)
+        {
+            if (_pollfds[i].revents & POLLIN)
+            {
+                if (_pollfds[i].fd == _serverFd)
+                    acceptClient();
+                else
+                    receiveData(i);
+            }
+            // verificar se o indice ainda existe apos remover cliente
+            if (i < (int)_pollfds.size() && (_pollfds[i].revents & POLLOUT))
+                sendData(i);
+        }
+    }
 }
 
 void Server::acceptClient(void)
@@ -138,7 +139,7 @@ void Server::receiveData(int indexFd)
 			std::cout << "Error in recv()" << std::endl;
 		else
 			std::cout << "Client disconnected: " << fd << std::endl;
-		removeClient(fd);
+		removeClient(indexFd);
 		return;
 	}
 
