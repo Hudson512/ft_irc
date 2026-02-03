@@ -6,15 +6,17 @@
 /*   By: lantonio <lantonio@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/22 10:45:21 by hmateque          #+#    #+#             */
-/*   Updated: 2026/02/03 10:27:20 by lantonio         ###   ########.fr       */
+/*   Updated: 2026/02/03 11:22:40 by lantonio         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Channel.hpp"
 
 Channel::Channel(const std::string& channelName, Client* creator)
-	: _name(channelName), _members(), _operators(), _hasTopic(false), _topic("")
+	: _name(channelName), _members(), _operators()
 {
+	_topic = "";
+	_hasTopic = false;
 	_operators.insert(std::pair<int, Client*>(creator->getClientfd(), creator));
 	_members.insert(std::pair<int, Client*>(creator->getClientfd(), creator));
 }
@@ -165,6 +167,23 @@ void    Channel::setTopic(int member_id, std::string topic) { //set a topic to t
 	// return if is in +t mode and member is not an operator
 
 	this->_topic = topic;
+}
+
+void Channel::broadcastMessage(const std::string& message, int sender_fd) // Broadcast message to all members
+{
+	if (!(_members.find(sender_fd) != _members.end()))
+		return;
+
+	std::map<int, Client*>::const_iterator it;
+	for (it = _members.begin(); it != _members.end(); ++it)
+	{
+		Client* member = it->second;
+		if (member && member->getClientfd() != -1)
+		{
+			std::string currentBuffer = member->getSendBuffer();
+			member->setSendBuffer(currentBuffer + message);
+		}
+	}
 }
 
 /*void Channel::setInvitedMember(Client* member) // adiciona um membro à lista de convidados
