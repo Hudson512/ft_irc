@@ -16,17 +16,23 @@ static bool ft_check(int ac, char **av)
 			return false;
 		}
 	}
+	std::string password = av[2];
+	if(password.empty() 
+		|| password.find(' ') != std::string::npos
+		|| password.find('\t') != std::string::npos)
+	{
+		std::cerr << "Error: the server password is wrong" << std::endl;
+		return false;
+	}
 	return true;	
 }
 
 int main(int ac, char **av)
 {
-	if (!ft_check(ac, av))
-		return 1;
-	int port = std::atoi(av[1]);
-	std::string password = av[2];
-	if (!password.empty())
+	if (ft_check(ac, av))
 	{
+		int port = std::atoi(av[1]);
+		std::string password = av[2];
 		try
 		{
 			Server server(port, password);
@@ -39,6 +45,5 @@ int main(int ac, char **av)
 			return 1;
 		}
 	}
-	std::cerr << "Error: the server password cannot be empty." << std::endl;
 	return 1;
 }
