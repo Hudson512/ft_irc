@@ -6,22 +6,29 @@
 /*   By: hmateque <hmateque@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/22 10:45:21 by hmateque          #+#    #+#             */
-/*   Updated: 2026/02/05 14:02:05 by hmateque         ###   ########.fr       */
+/*   Updated: 2026/02/09 13:15:03 by hmateque         ###   ########.fr       */
 /*                                                                            */
 /******************************************************************************/
 
 #include "../includes/Channel.hpp"
 
 Channel::Channel(const std::string& channelName, Client* creator)
-	: _name(channelName), _members(), _operators()
+	: _name(channelName), 
+	  _channelPassword(""),
+	  _topic(""),
+	  _bannedMembers(),
+	  _invitedMembers(),
+	  _members(),
+	  _operators(),
+	  _key(""),
+	  _limit(0),
+	  _hasTopic(false),
+	  _hasLimit(false),
+	  _hasKey(false),
+	  _isInviteOnly(false),
+	  _isOperatorsOnly(false),
+	  _hasPassword(false)
 {
-	_key = "";
-	_topic = "";
-	_hasTopic = false;
-	_isOperatorsOnly = false;
-	_hasKey = false;
-	_hasLimit = false;
-	_limit = 0;
 	_operators.insert(std::pair<int, Client*>(creator->getClientfd(), creator));
 	_members.insert(std::pair<int, Client*>(creator->getClientfd(), creator));
 }
