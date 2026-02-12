@@ -6,7 +6,7 @@
 /*   By: hmateque <hmateque@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/22 10:45:21 by hmateque          #+#    #+#             */
-/*   Updated: 2026/02/09 13:15:03 by hmateque         ###   ########.fr       */
+/*   Updated: 2026/02/12 11:11:16 by hmateque         ###   ########.fr       */
 /*                                                                            */
 /******************************************************************************/
 
@@ -253,12 +253,16 @@ void	Channel::setLimit(int member_id, std::string mode, int limit)
 
 void Channel::broadcastMessage(const std::string& message, int sender_fd) // Broadcast message to all members
 {
-	if (!(_members.find(sender_fd) != _members.end()))
+	// Se sender_fd != -1, verificar se é membro (excluir do envio)
+	if (sender_fd != -1 && _members.find(sender_fd) == _members.end())
 		return;
 
 	std::map<int, Client*>::const_iterator it;
 	for (it = _members.begin(); it != _members.end(); ++it)
 	{
+		// Pular o remetente (se sender_fd == -1, envia para todos)
+		if (it->first == sender_fd)
+			continue;
 		Client* member = it->second;
 		if (member && member->getClientfd() != -1)
 		{
