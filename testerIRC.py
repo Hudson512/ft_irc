@@ -219,6 +219,57 @@ def test_partial_cmd_other_alive():
 
     c1.close(); c2.close()
 
+def test_ctrlD_subject():
+    section("TESTE 7b: CTRL+D DO SUBJECT (com^Dman^Dd)")
+    # Simulates the exact test from the subject:
+    # nc -C 127.0.0.1 6667 → com^Dman^Dd
+    # ctrl+D sends the buffer without newline, so the server receives
+    # "com" then "man" then "d\r\n" in separate recv() calls
+    c = IRCClient("CtrlD")
+    c.connect()
+    # First authenticate normally
+    c.send(f"PASS {PASS}")
+    c.send("NICK ctrld1")
+    c.send("USER c 0 * :c")
+    time.sleep(0.5)
+    res = c.recv()
+    if "001" not in res:
+        log("Ctrl+D Subject", "FAIL", f"Auth falhou: {repr(res[:60])}")
+        c.close()
+        return
+
+    # Now simulate: "PRIVMSG ctrld1 :hel" + "lo wor" + "ld\r\n"
+    # Each chunk sent separately (like ctrl+D in nc)
+    c.s.send("PRIV".encode())           # partial - no newline
+    time.sleep(0.3)
+    c.s.send("MSG ctr".encode())        # partial - no newline
+    time.sleep(0.3)
+    c.s.send("ld1 :hello\r\n".encode()) # final chunk with \r\n
+    time.sleep(0.5)
+    res = c.recv()
+    if "hello" in res:
+        log("Ctrl+D Subject", "OK", "Servidor reagregou 'PRIV' + 'MSG ctr' + 'ld1 :hello' correctamente")
+    else:
+        log("Ctrl+D Subject", "FAIL", f"Resp: {repr(res[:80])}")
+    c.close()
+
+def test_nc_without_C_flag():
+    section("TESTE 7c: nc SEM FLAG -C (só \\n, sem \\r)")
+    # nc without -C sends only \n, not \r\n
+    c = IRCClient("NcPlain")
+    c.connect()
+    # Send commands with \n only (no \r)
+    c.s.send(f"PASS {PASS}\n".encode())
+    c.s.send("NICK ncplain1\n".encode())
+    c.s.send("USER n 0 * :n\n".encode())
+    time.sleep(0.5)
+    res = c.recv()
+    if "001" in res:
+        log("nc sem -C", "OK", "Servidor aceitou comandos com \\n puro (sem \\r)")
+    else:
+        log("nc sem -C", "FAIL", f"Resp: {repr(res[:80])}")
+    c.close()
+
 def test_abrupt_disconnect():
     section("TESTE 8: DESCONEXÃO BRUTA (sem QUIT)")
     c1 = IRCClient("Dono")
@@ -813,6 +864,8 @@ if __name__ == "__main__":
         # SECÇÃO 3: Networking Specials
         test_fragmentation()
         test_partial_cmd_other_alive()
+        test_ctrlD_subject()
+        test_nc_without_C_flag()
         test_abrupt_disconnect()
         test_half_command_disconnect()
         test_stopped_client_flood()
